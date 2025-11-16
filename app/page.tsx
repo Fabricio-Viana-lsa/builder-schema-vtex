@@ -21,7 +21,7 @@ export default function Home() {
           Crie schemas JSON para componentes customizados da VTEX de forma simples e visual
         </p>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-          <Button onClick={goToCreate} size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all">
+          <Button onClick={goToCreate} size="lg" className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all">
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             Começar a Criar
           </Button>

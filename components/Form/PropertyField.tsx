@@ -1,7 +1,7 @@
 'use client'
 
 import { PropertyForm, PropertyType, WidgetType } from '@/types';
-import ArrayItemConfig from './ArrayItemConfig';
+import ArrayItemConfig from './ArrayItemConfig/index';
 import ConditionalFieldsConfig from './ConditionalFieldsConfig';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -173,6 +173,24 @@ export default function PropertyField({ property, onChange, onRemove }: Property
                 Opcional: Nomes que aparecem no Site Editor (mesma ordem do enum)
               </p>
             </div>
+          </>
+        )}
+
+        {/* Campos específicos para Object */}
+        {property.type === 'object' && (
+          <>
+            <div className="border-t border-border pt-3">
+              <Label>Propriedades do Objeto</Label>
+              <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                Configure as propriedades que farão parte deste objeto
+              </p>
+            </div>
+
+            <ArrayItemConfig
+              properties={property.objectProperties || []}
+              onChange={(props) => handleChange('objectProperties', props)}
+            />
           </>
         )}
 
