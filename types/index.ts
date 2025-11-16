@@ -52,6 +52,9 @@ export const propertyFormSchema = z.object({
   editorItemTitleDefault: z.string().optional(),
   editorItemTitleLabel: z.string().optional(),
   
+  // Para object
+  objectProperties: z.array(arrayItemFormSchema).optional(),
+  
   // Para conditional
   conditionalFields: z.array(conditionalFieldFormSchema).optional(),
   addConditionalFields: z.boolean().default(false),
@@ -66,7 +69,18 @@ export type PropertyForm = z.infer<typeof propertyFormSchema>;
 
 // Aliases para compatibilidade
 export type ConditionalField = ConditionalFieldForm;
-export type ArrayItemProperty = ArrayItemForm;
+
+// Exportar tipos discriminados de schema.ts
+export type {
+  ArrayItemProperty,
+  ArrayArrayItemProperty,
+  ObjectArrayItemProperty,
+  StringArrayItemProperty,
+  EnumArrayItemProperty,
+  BooleanArrayItemProperty,
+  NumberArrayItemProperty,
+  ConditionalArrayItemProperty,
+} from './schema';
 
 // ===== Tipos do Schema VTEX (JSON gerado) =====
 export type VtexProperty = {

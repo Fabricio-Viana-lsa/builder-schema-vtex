@@ -38,6 +38,7 @@ export default function PropertyList({
   const hasChildren = (property: PropertyForm) => {
     return (
       (property.type === 'array' && property.arrayItemProperties && property.arrayItemProperties.length > 0) ||
+      (property.type === 'object' && property.objectProperties && property.objectProperties.length > 0) ||
       (property.type === 'conditional' && property.conditionalFields && property.conditionalFields.length > 0)
     );
   };
@@ -150,6 +151,29 @@ export default function PropertyList({
                         >
                           <div className="w-4" />
                           <FileJson className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
+                          <span className={cn(
+                            "text-xs flex-1 truncate",
+                            item.name ? "text-foreground" : "text-muted-foreground italic"
+                          )}>
+                            {item.name || 'sem-nome'}
+                          </span>
+                          <Badge 
+                            variant={item.type as never}
+                            className="scale-[0.65] shrink-0"
+                          >
+                            {item.type}
+                          </Badge>
+                        </div>
+                      ))}
+
+                      {/* Object Properties */}
+                      {property.type === 'object' && property.objectProperties?.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-1 px-2 py-1 hover:bg-[hsl(var(--sidebar-hover))]"
+                        >
+                          <div className="w-4" />
+                          <FileJson className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
                           <span className={cn(
                             "text-xs flex-1 truncate",
                             item.name ? "text-foreground" : "text-muted-foreground italic"

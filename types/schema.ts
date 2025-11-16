@@ -1,4 +1,4 @@
-export type PropertyType = 'string' | 'boolean' | 'object' | 'array' | 'number' | 'conditional';
+export type PropertyType = 'string' | 'boolean' | 'object' | 'array' | 'number' | 'enum' | 'conditional';
 
 export type WidgetType = 
   | 'image-uploader' 
@@ -42,16 +42,65 @@ export interface SchemaDefinition {
   properties: { [key: string]: Property };
 }
 
-export interface ArrayItemProperty {
+// Base comum para todas as propriedades
+interface BaseArrayItemProperty {
   id: string;
   name: string;
-  type: PropertyType;
   title: string;
   description?: string;
   defaultValue?: string;
+}
+
+// Propriedade do tipo string
+export interface StringArrayItemProperty extends BaseArrayItemProperty {
+  type: 'string';
   widget?: WidgetType;
   format?: string;
 }
+
+// Propriedade do tipo boolean
+export interface BooleanArrayItemProperty extends BaseArrayItemProperty {
+  type: 'boolean';
+}
+
+// Propriedade do tipo number
+export interface NumberArrayItemProperty extends BaseArrayItemProperty {
+  type: 'number';
+}
+
+// Propriedade do tipo enum
+export interface EnumArrayItemProperty extends BaseArrayItemProperty {
+  type: 'enum';
+  enumValues?: string;
+  enumNames?: string;
+}
+
+// Propriedade do tipo array (pode conter outras propriedades aninhadas)
+export interface ArrayArrayItemProperty extends BaseArrayItemProperty {
+  type: 'array';
+  arrayItemProperties?: ArrayItemProperty[];
+}
+
+// Propriedade do tipo object (pode conter outras propriedades aninhadas)
+export interface ObjectArrayItemProperty extends BaseArrayItemProperty {
+  type: 'object';
+  objectProperties?: ArrayItemProperty[];
+}
+
+// Propriedade do tipo conditional
+export interface ConditionalArrayItemProperty extends BaseArrayItemProperty {
+  type: 'conditional';
+}
+
+// Union type discriminado
+export type ArrayItemProperty =
+  | StringArrayItemProperty
+  | BooleanArrayItemProperty
+  | NumberArrayItemProperty
+  | EnumArrayItemProperty
+  | ArrayArrayItemProperty
+  | ObjectArrayItemProperty
+  | ConditionalArrayItemProperty;
 
 export interface PropertyForm {
   id: string;

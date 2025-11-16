@@ -1,4 +1,69 @@
-import { PropertyForm } from '@/types';
+import { 
+  PropertyForm, 
+  ArrayItemProperty,
+  ArrayArrayItemProperty,
+  ObjectArrayItemProperty,
+  EnumArrayItemProperty
+} from '@/types';
+
+/**
+ * Type guard para propriedades do tipo array
+ */
+function isArrayProperty(prop: ArrayItemProperty): prop is ArrayArrayItemProperty {
+  return prop.type === 'array';
+}
+
+/**
+ * Type guard para propriedades do tipo object
+ */
+function isObjectProperty(prop: ArrayItemProperty): prop is ObjectArrayItemProperty {
+  return prop.type === 'object';
+}
+
+/**
+ * Type guard para propriedades do tipo enum
+ */
+function isEnumProperty(prop: ArrayItemProperty): prop is EnumArrayItemProperty {
+  return prop.type === 'enum';
+}
+
+/**
+ * Gera tipo TypeScript para propriedades de array recursivamente
+ */
+function generateArrayItemType(items: ArrayItemProperty[], depth: number = 0): string {
+  const indent = '    ' + '  '.repeat(depth);
+  const itemProps: string[] = [];
+  
+  items.forEach((itemProp) => {
+    if (!itemProp.name) return;
+    
+    let itemType: string;
+    
+    // Enum dentro de array
+    if (isEnumProperty(itemProp) && itemProp.enumValues) {
+      const values = itemProp.enumValues.split(',').map((v: string) => `'${v.trim()}'`);
+      itemType = values.join(' | ');
+    }
+    // Array aninhado
+    else if (isArrayProperty(itemProp) && itemProp.arrayItemProperties && itemProp.arrayItemProperties.length > 0) {
+      const nestedType = generateArrayItemType(itemProp.arrayItemProperties, depth + 1);
+      itemType = `Array<${nestedType}>`;
+    }
+    // Objeto aninhado
+    else if (isObjectProperty(itemProp) && itemProp.objectProperties && itemProp.objectProperties.length > 0) {
+      const nestedType = generateArrayItemType(itemProp.objectProperties, depth + 1);
+      itemType = nestedType;
+    }
+    // Tipos básicos
+    else {
+      itemType = mapItemTypeToTypeScript(itemProp.type);
+    }
+    
+    itemProps.push(`${indent}${itemProp.name}: ${itemType};`);
+  });
+  
+  return `{\n${itemProps.join('\n')}\n${indent.slice(0, -2)}}`;
+}
 
 /**
  * Gera interface TypeScript a partir das propriedades do formulário
@@ -52,25 +117,23 @@ function mapPropertyTypeToTypeScript(prop: PropertyForm): string {
       return 'boolean';
     
     case 'object':
+      if (prop.objectProperties && prop.objectProperties.length > 0) {
+        // Gerar tipo inline para as propriedades do objeto
+        return generateArrayItemType(prop.objectProperties);
+      }
       return 'Record<string, any>';
     
     case 'array':
       if (prop.arrayItemProperties && prop.arrayItemProperties.length > 0) {
-        // Gerar interface inline para os itens do array
-        const itemProps: string[] = [];
+        // Gerar tipo inline para os itens do array com suporte a aninhamento
+        const arrayItemType = generateArrayItemType(prop.arrayItemProperties);
         
         if (prop.enableEditorItemTitle) {
-          itemProps.push('    __editorItemTitle?: string;');
+          // Adicionar __editorItemTitle no tipo
+          return `Array<${arrayItemType.replace('{', '{\n    __editorItemTitle?: string;')}>`;
         }
         
-        prop.arrayItemProperties.forEach((itemProp) => {
-          if (!itemProp.name) return;
-          
-          const itemType = mapItemTypeToTypeScript(itemProp.type);
-          itemProps.push(`    ${itemProp.name}: ${itemType};`);
-        });
-        
-        return `Array<{\n${itemProps.join('\n')}\n  }>`;
+        return `Array<${arrayItemType}>`;
       }
       return 'Array<any>';
     
@@ -184,7 +247,6 @@ export function generateFullTypeScript(
       prop.conditionalFields &&
       prop.conditionalFields.length > 0
     ) {
-      const conditionalInterfaceName = `${capitalize(prop.name)}Fields`;
       tsType = `'none' | 'provide'`;
       lines.push(`  ${prop.name}${!prop.required ? '?' : ''}: ${tsType};`);
       
@@ -193,8 +255,8 @@ export function generateFullTypeScript(
         if (!condField.name) return;
         
         let fieldType: string;
-        if (condField.type === 'enum' && condField.enumValues) {
-          const values = condField.enumValues.split(',').map(v => `'${v.trim()}'`);
+        if (isEnumProperty(condField) && condField.enumValues) {
+          const values = condField.enumValues.split(',').map((v: string) => `'${v.trim()}'`);
           fieldType = values.join(' | ');
         } else {
           fieldType = mapItemTypeToTypeScript(condField.type);

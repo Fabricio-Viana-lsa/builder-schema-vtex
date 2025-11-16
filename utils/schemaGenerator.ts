@@ -1,4 +1,104 @@
-import { PropertyForm, VtexSchemaDefinition, VtexProperty } from '@/types';
+import { 
+  PropertyForm, 
+  VtexSchemaDefinition, 
+  VtexProperty, 
+  ArrayItemProperty,
+  ArrayArrayItemProperty,
+  ObjectArrayItemProperty,
+  EnumArrayItemProperty,
+  StringArrayItemProperty
+} from '@/types';
+
+/**
+ * Type guard para propriedades do tipo array
+ */
+function isArrayProperty(prop: ArrayItemProperty): prop is ArrayArrayItemProperty {
+  return prop.type === 'array';
+}
+
+/**
+ * Type guard para propriedades do tipo object
+ */
+function isObjectProperty(prop: ArrayItemProperty): prop is ObjectArrayItemProperty {
+  return prop.type === 'object';
+}
+
+/**
+ * Type guard para propriedades do tipo enum
+ */
+function isEnumProperty(prop: ArrayItemProperty): prop is EnumArrayItemProperty {
+  return prop.type === 'enum';
+}
+
+/**
+ * Type guard para propriedades do tipo string
+ */
+function isStringProperty(prop: ArrayItemProperty): prop is StringArrayItemProperty {
+  return prop.type === 'string';
+}
+
+/**
+ * Processa recursivamente propriedades de array/object aninhados
+ */
+function processArrayItemProperties(items: ArrayItemProperty[]): { [key: string]: VtexProperty } {
+  const properties: { [key: string]: VtexProperty } = {};
+
+  items.forEach((itemProp) => {
+    if (!itemProp.name) return;
+
+    const itemProperty: VtexProperty = {
+      type: (itemProp.type === 'conditional' || itemProp.type === 'enum') ? 'string' : itemProp.type,
+      title: itemProp.title,
+    };
+
+    if (itemProp.description) itemProperty.description = itemProp.description;
+
+    if (itemProp.defaultValue) {
+      if (itemProp.type === 'boolean') {
+        itemProperty.default = itemProp.defaultValue === 'true';
+      } else if (itemProp.type === 'number') {
+        itemProperty.default = Number(itemProp.defaultValue);
+      } else {
+        itemProperty.default = itemProp.defaultValue;
+      }
+    }
+
+    if (isStringProperty(itemProp)) {
+      if (itemProp.widget) {
+        itemProperty.widget = { 'ui:widget': itemProp.widget };
+      }
+      if (itemProp.format) {
+        itemProperty.format = itemProp.format;
+      }
+    }
+
+    if (isEnumProperty(itemProp) && itemProp.enumValues) {
+      itemProperty.enum = itemProp.enumValues.split(',').map((v: string) => v.trim());
+      if (itemProp.enumNames) {
+        itemProperty.enumNames = itemProp.enumNames.split(',').map((v: string) => v.trim());
+      }
+    }
+
+    // Processar array aninhado
+    if (isArrayProperty(itemProp) && itemProp.arrayItemProperties && itemProp.arrayItemProperties.length > 0) {
+      const nestedProperties = processArrayItemProperties(itemProp.arrayItemProperties);
+      itemProperty.items = {
+        type: 'object',
+        properties: nestedProperties,
+      };
+    }
+
+    // Processar objeto aninhado
+    if (isObjectProperty(itemProp) && itemProp.objectProperties && itemProp.objectProperties.length > 0) {
+      const nestedProperties = processArrayItemProperties(itemProp.objectProperties);
+      itemProperty.properties = nestedProperties;
+    }
+
+    properties[itemProp.name] = itemProperty;
+  });
+
+  return properties;
+}
 
 /**
  * Gera o schema VTEX a partir das propriedades do formulário
@@ -52,6 +152,13 @@ export function generateVtexSchema(
       }
     }
 
+    // Configuração de Object
+    if (prop.type === 'object' && prop.objectProperties && prop.objectProperties.length > 0) {
+      // Processar propriedades do objeto (com suporte a aninhamento)
+      const processedProperties = processArrayItemProperties(prop.objectProperties);
+      property.properties = processedProperties;
+    }
+
     // Configuração de Array
     if (prop.type === 'array' && prop.arrayItemProperties && prop.arrayItemProperties.length > 0) {
       const itemProperties: { [key: string]: VtexProperty } = {};
@@ -65,38 +172,9 @@ export function generateVtexSchema(
         };
       }
 
-      prop.arrayItemProperties.forEach((itemProp) => {
-        if (!itemProp.name) return;
-
-        const itemProperty: VtexProperty = {
-          type: (itemProp.type === 'conditional' || itemProp.type === 'enum') ? 'string' : itemProp.type,
-          title: itemProp.title,
-        };
-
-        if (itemProp.description) itemProperty.description = itemProp.description;
-
-        if (itemProp.defaultValue) {
-          if (itemProp.type === 'boolean') {
-            itemProperty.default = itemProp.defaultValue === 'true';
-          } else if (itemProp.type === 'number') {
-            itemProperty.default = Number(itemProp.defaultValue);
-          } else {
-            itemProperty.default = itemProp.defaultValue;
-          }
-        }
-
-        if (itemProp.type === 'string') {
-          if (itemProp.widget) {
-            itemProperty.widget = { 'ui:widget': itemProp.widget };
-          }
-
-          if (itemProp.format) {
-            itemProperty.format = itemProp.format;
-          }
-        }
-
-        itemProperties[itemProp.name] = itemProperty;
-      });
+      // Processar propriedades do item do array (com suporte a aninhamento)
+      const processedProperties = processArrayItemProperties(prop.arrayItemProperties);
+      Object.assign(itemProperties, processedProperties);
 
       property.items = {
         type: 'object',
