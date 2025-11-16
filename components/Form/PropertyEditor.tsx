@@ -1,34 +1,33 @@
 'use client'
 
-import { PropertyForm, PropertyType, WidgetType, ArrayItemProperty, ConditionalFieldForm } from '@/types';
+import { PropertyType, WidgetType } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Info, FileJson } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { usePropertyContext } from '@/contexts/PropertyContext';
 
-interface PropertyEditorProps {
-  property: PropertyForm | ArrayItemProperty | ConditionalFieldForm;
-  path: string[];
-  onChange: (path: string[], updatedProperty: PropertyForm | ArrayItemProperty | ConditionalFieldForm) => void;
-  isRootLevel: boolean;
-}
-
-export default function PropertyEditor({
-  property,
-  path,
-  onChange,
-  isRootLevel,
-}: PropertyEditorProps) {
+export default function PropertyEditor() {
+  const { selectedPath, getPropertyByPath, updatePropertyByPath } = usePropertyContext();
+  
+  if (!selectedPath) {
+    return null;
+  }
+  
+  const property = getPropertyByPath(selectedPath);
+  
+  if (!property) {
+    return null;
+  }
+  
+  const isRootLevel = selectedPath.length === 1;
   const propertyTypes: PropertyType[] = ['string', 'boolean', 'object', 'array', 'number', 'enum', 'conditional'];
   const widgetTypes: WidgetType[] = ['image-uploader', 'datetime', 'textarea', 'color-picker', 'range', 'radio'];
 
-  const handleChange = <K extends keyof PropertyForm>(
-    field: K,
-    value: PropertyForm[K]
-  ) => {
-    onChange(path, { ...property, [field]: value });
+  const handleChange = (field: string, value: unknown) => {
+    updatePropertyByPath(selectedPath, { ...property, [field]: value });
   };
 
   const isEnumType = property.type === 'enum';
@@ -48,7 +47,7 @@ export default function PropertyEditor({
               {property.name || 'Nova Propriedade'}
             </h2>
             <p className="text-xs text-muted-foreground font-mono">
-              {path.join(' > ')}
+              {selectedPath.join(' > ')}
             </p>
           </div>
           <Badge variant={property.type as never}>{property.type}</Badge>

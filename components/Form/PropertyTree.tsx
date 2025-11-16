@@ -1,8 +1,7 @@
 'use client'
 
-import { PropertyForm, ArrayItemProperty } from '@/types';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { 
   Plus, 
   Trash2, 
@@ -14,36 +13,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useState } from 'react';
+import { usePropertyContext } from '@/contexts/PropertyContext';
+import { PropertyForm, ArrayItemProperty } from '@/types';
 
-// Tipo para representar um item na árvore
-export type TreeItem = {
-  id: string;
-  name: string;
-  type: PropertyForm['type'] | 'root';
-  title: string;
-  path: string[]; // Caminho completo até este item
-  hasChildren: boolean;
-  isExpanded: boolean;
-  depth: number;
-  property: PropertyForm | ArrayItemProperty;
-};
-
-interface PropertyTreeProps {
-  properties: PropertyForm[];
-  selectedPath: string[] | null;
-  onSelectPath: (path: string[]) => void;
-  onAddProperty: (parentPath: string[] | null) => void;
-  onRemoveProperty: (path: string[]) => void;
-}
-
-export default function PropertyTree({
-  properties,
-  selectedPath,
-  onSelectPath,
-  onAddProperty,
-  onRemoveProperty,
-}: PropertyTreeProps) {
+export default function PropertyTree() {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  
+  const {
+    properties,
+    selectedPath,
+    setSelectedPath,
+    addProperty,
+    removeProperty,
+  } = usePropertyContext();
 
   const toggleExpand = (pathKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,7 +90,7 @@ export default function PropertyTree({
               : "border-l-transparent"
           )}
           style={{ paddingLeft: `${indentWidth + 8}px` }}
-          onClick={() => onSelectPath(path)}
+          onClick={() => setSelectedPath(path)}
         >
           {/* Expand/Collapse Icon */}
           {children ? (
@@ -160,7 +142,7 @@ export default function PropertyTree({
                 className="w-6 h-6 flex items-center justify-center bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-all"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddProperty(path);
+                  addProperty(path);
                 }}
                 title="Adicionar propriedade"
               >
@@ -173,7 +155,7 @@ export default function PropertyTree({
               className="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded transition-all"
               onClick={(e) => {
                 e.stopPropagation();
-                onRemoveProperty(path);
+                removeProperty(path);
               }}
               title="Remover"
             >
@@ -208,7 +190,7 @@ export default function PropertyTree({
           </Badge>
         </div>
         <Button
-          onClick={() => onAddProperty(null)}
+          onClick={() => addProperty(null)}
           className="w-full text-sm"
           size="sm"
           variant="success"
