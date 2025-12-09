@@ -58,7 +58,7 @@ const Navbar = () => {
           <p className="text-xs sm:text-sm text-muted-foreground hidden lg:block">
             Criado por{' '}
             <Link 
-              href={'https://github.com/Fabricio-P-Viana'} 
+              href={'https://fabricio.vercel.app'} 
               target="_blank"
               className="text-primary hover:text-primary/80 font-medium"
             >
